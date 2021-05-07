@@ -1,0 +1,50 @@
+version: "2.1"
+
+services:
+  spark:
+    image: jupyter/pyspark-notebook
+    container_name: spark
+    ports:
+      - "8888:8888"
+      - "4040-4080:4040-4080"
+    volumes:
+      - ./notebooks:/home/jovyan/work/notebooks/
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.22
+
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    expose:
+      - "8080"
+      - "9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.27.0.12
+      KAFKA_ZOOKEEPER_CONNECT: 172.27.0.32:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://172.27.0.12:9092
+      KAFKA_LISTENERS: PLAINTEXT://172.27.0.12:9092
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.12
+    depends_on:
+      - "zookeeper"
+
+  zookeeper:
+      image: wurstmeister/zookeeper:latest
+      container_name: zookeeper
+      expose:
+        - "2181"
+      networks:
+        stock_analytics:
+          ipv4_address: 172.27.0.32
+
+networks:
+  stock_analytics:
+    name: stock_analytics
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.27.0.0/16
+          gateway: 172.27.0.1
