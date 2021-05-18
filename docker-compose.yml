@@ -2,8 +2,11 @@ version: "2.1"
 
 services:
   spark:
-    image: jupyter/pyspark-notebook
+    build: docker/build/jupyter
     container_name: spark
+    environment:
+      - TZ=America/New_York
+      - DEBIAN_FRONTEND=noninteractive
     ports:
       - "8888:8888"
       - "4040-4080:4040-4080"
@@ -38,6 +41,71 @@ services:
       networks:
         stock_analytics:
           ipv4_address: 172.27.0.32
+
+  kafka_manager:
+    image: hlebalbau/kafka-manager:1.3.3.18
+    container_name: kafka_manager
+    expose:
+      - "9000"
+    environment:
+      ZK_HOSTS: "172.27.0.32:2181"
+      APPLICATION_SECRET: "random-secret"
+    command: -Dpidfile.path=/dev/null
+    depends_on:
+      - "zookeeper"
+      - "kafka"
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.44
+
+  db:
+    build: docker/build/postgresql
+    image: stockanalytics/postgresql
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - "./volumes/pgdata:/var/lib/postgresql/data"
+      - "./volumes/data:/opt/data"
+    tmpfs:
+      - /run
+      - /tmp
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.55
+
+  elasticsearch:
+    build: ./docker/build/elasticsearch
+    image: stockanalytics/elasticsearch
+    container_name: elasticsearch
+    volumes:
+      - ./docker/build/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: changeme
+      discovery.type: single-node
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.88
+
+  kibana:
+    build: ./docker/build/kibana
+    image: stockanalytics/kibana
+    container_name: kibana
+    volumes:
+      - ./docker/build/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - "5601:5601"
+    networks:
+      stock_analytics:
+        ipv4_address: 172.27.0.99
+    depends_on:
+      - elasticsearch
 
 networks:
   stock_analytics:

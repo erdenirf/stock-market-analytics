@@ -1,2 +1,4 @@
 .idea
 venv
+docker/volumes/pgdata
+docker/volumes/data
