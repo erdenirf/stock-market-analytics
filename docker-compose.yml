@@ -65,8 +65,8 @@ services:
     environment:
       POSTGRES_PASSWORD: example
     volumes:
-      - "./volumes/pgdata:/var/lib/postgresql/data"
-      - "./volumes/data:/opt/data"
+      - ./volumes/pgdata:/var/lib/postgresql/data
+      - ./volumes/data:/opt/data
     tmpfs:
       - /run
       - /tmp
@@ -82,6 +82,7 @@ services:
     container_name: elasticsearch
     volumes:
       - ./docker/build/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./volumes/elasticsearch/data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
